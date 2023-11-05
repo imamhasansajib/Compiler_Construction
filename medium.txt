@@ -1,0 +1,70 @@
+def parse_grammar(input_lines):
+    productions = {}
+    for line in input_lines:
+        nonterminal, production = line.strip().split(' -> ')
+        productions.setdefault(nonterminal, []).extend(p.strip() for p in production.split('|'))
+    return productions
+
+def eliminate_left_recursion(productions, nonterminal, seen=None):
+    if seen is None:
+        seen = set()
+
+    if nonterminal in seen:
+        return
+
+    seen.add(nonterminal)
+
+    new_productions = []
+    recursive_productions = []
+    nonrecursive_productions = []
+
+    for production in productions[nonterminal]:
+        if production.startswith(nonterminal):
+            recursive_productions.append(production[len(nonterminal):])
+        else:
+            nonrecursive_productions.append(production)
+
+    if recursive_productions:
+        new_nonterminal = nonterminal + "'"
+        new_productions.extend(p + new_nonterminal for p in nonrecursive_productions)
+        productions[nonterminal] = new_productions
+
+        for production in recursive_productions:
+            productions.setdefault(new_nonterminal, []).append(production + new_nonterminal)
+        productions.setdefault(new_nonterminal, []).append("ε")
+
+        eliminate_left_recursion(productions, new_nonterminal, seen)
+
+    seen.remove(nonterminal)
+
+def print_grammar(productions):
+    seen = set()  # To store the nonterminals that have been processed for printing
+    for nonterminal, production in productions.items():
+        if nonterminal not in seen:
+            print(f"{nonterminal} -> {' | '.join(production)}")
+            primed_version = nonterminal + "'"
+            if primed_version in productions:
+                print(f"{primed_version} -> {' | '.join(productions[primed_version])}")
+                seen.add(primed_version)
+            seen.add(nonterminal)
+
+def main():
+    print("Enter the context-free grammar (one production per line, press Enter on an empty line to finish):")
+
+    input_lines = []
+    while True:
+        line = input()
+        if not line:
+            break
+        input_lines.append(line)
+
+    productions = parse_grammar(input_lines)
+
+    for nonterminal in list(productions.keys()):
+        eliminate_left_recursion(productions, nonterminal)
+
+    print("Modified Grammar:")
+    print_grammar(productions)
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,13 @@
+#include <stdio.h>
+
+int main()
+{
+    int day; int month; int year; 
+    float temperature;
+    char ch;
+    day = 5; month = 12; year = 1999;
+    day = month+day+7;
+    printf();
+
+    return 0;
+}

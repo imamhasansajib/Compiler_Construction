@@ -1,0 +1,61 @@
+60 line:
+
+def parse_grammar(input_lines):
+    productions = {}
+    for line in input_lines:
+        nonterminal, production = line.strip().split(' -> ')
+        productions.setdefault(nonterminal, []).extend(p.strip() for p in production.split('|'))
+    return productions
+
+def eliminate_left_recursion(productions, nonterminal, seen=None):
+    if seen is None:
+        seen = set()
+
+    if nonterminal in seen:
+        return
+
+    seen.add(nonterminal)
+
+    nonrecursive_productions, recursive_productions = [], []
+
+    for production in productions[nonterminal]:
+        (recursive_productions if production.startswith(nonterminal) else nonrecursive_productions).append(production)
+
+    if recursive_productions:
+        new_nonterminal = nonterminal + "'"
+        productions[nonterminal] = [p + new_nonterminal for p in nonrecursive_productions]
+
+        productions.setdefault(new_nonterminal, []).extend(p + new_nonterminal for p in recursive_productions)
+        productions[new_nonterminal].append("ε")
+
+        eliminate_left_recursion(productions, new_nonterminal, seen)
+
+    seen.remove(nonterminal)
+
+def print_grammar(productions):
+    seen = set()
+    for nonterminal, production in productions.items():
+        if nonterminal not in seen:
+            print(f"{nonterminal} -> {' | '.join(production)}")
+            primed_version = nonterminal + "'"
+            if primed_version in productions:
+                print(f"{primed_version} -> {' | '.join(productions[primed_version])}")
+                seen.add(primed_version)
+            seen.add(nonterminal)
+
+print("Enter the context-free grammar (one production per line, press Enter on an empty line to finish):")
+
+input_lines = []
+while True:
+    line = input()
+    if not line:
+        break
+    input_lines.append(line)
+
+productions = parse_grammar(input_lines)
+
+for nonterminal in list(productions.keys()):
+    eliminate_left_recursion(productions, nonterminal)
+
+print("Modified Grammar:")
+print_grammar(productions)
